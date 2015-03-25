@@ -104,7 +104,7 @@ Allows you to add a resource to the Resource Matrix, but at runtime. The format 
 ## Renaming from "uoe"
 We use the global namespace `uoe` because its our university's initials. You of course may want to change this. Doing so is not difficult. If, for example, you want to use `your_name_here` as the global namespace:
 
- - Change one of the last lines of `uoe_core.js` to `window.your_name_here = core;`
+ - Change last line of `uoe_core.js` to `})( 'your_name_here' );`
  - In your modules, change the last line from `})(uoe);` to `})(your_name_here);`
  - In the function reference above use, for example, `your_name_here.require` instead of `uoe.require`.
 

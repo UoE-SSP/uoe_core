@@ -2,7 +2,7 @@
  * @package uoe_core
  * @url https://github.com/UoE-SSP/uoe_core
  */
-(function(){
+(function( namespace ){
     "use strict";
     // Initiate the core object
     var core = {},
@@ -11,6 +11,8 @@
         loaded = [], // Initiate the load list
         dirPrefix = 'examples/'; // Change this to the location of your JavaScript files
     
+    // Don't allow a conflict to happen
+    if( !!window[namespace] ) return;
     
     // The grand resource matrix. You can use % as a synonym for the directory detailed above
     var resourceMatrix = {
@@ -454,6 +456,6 @@
         document.attachEvent( 'onDOMContentLoaded', loadScripts );
     }
     
-    // Expose core to the global scope as UOE
-    window.uoe = core;
-})();
+    // Expose core to the global scope
+    window[namespace] = core;
+})( 'uoe' );
