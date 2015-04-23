@@ -57,3 +57,28 @@ QUnit.test( "uoe_core conflict aversion", function( assert ) {
         done();
     });
 });
+
+// Check that null scripts work
+QUnit.test( "Null script", function( assert ) {
+    var done = assert.async();
+    
+    uoe.require('', function() {
+        assert.ok( true );
+        done();
+    });
+});
+
+// Check that conditional loading works
+QUnit.test( "Conditional loading", function( assert ) {
+    var done = assert.async();
+    
+    uoe.register('jquery-google-cdn', {
+        src: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js'
+    });
+    
+    uoe.require('jquery-google-cdn|jquery', function() {
+        assert.ok( typeof uoe.$ === 'function', "jQuery loaded" );
+        assert.ok( typeof uoe.$.fn.test === 'function', "Plugin loaded" );
+        done();
+    });
+});

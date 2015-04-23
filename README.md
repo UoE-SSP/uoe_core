@@ -21,30 +21,34 @@ For example, the "demo" module would produce an object at `uoe.demo` which conta
 
 New modules should be built off the template provided below:
 ```javascript
-(function(uoe){
+(function(core){
     "use strict";
  
-    // Local-scope jQuery (if you're using it)
-    var $ = uoe.$;
- 
     // Define namespace
-    uoe.namespace_for_this_mod = {};
-
+    core.namespace_for_this_mod = {};
+     
     // Define a function
     function exampleFunctionIveCreated() {
         alert( 'Please remove the exampleFunctionIveCreated function from your module.' );
     }
     // Expose to global scope
-    uoe.namespace_for_this_mod.exampleFunctionIveCreated = exampleFunctionIveCreated;
-
+    core.namespace_for_this_mod.exampleFunctionIveCreated = exampleFunctionIveCreated;
+    
+    // If using jQuery, wrap the parts of your code using it in a require.
+    // You may end up wrapping your entire module in jQuery. That's fine.
+    uoe.require('jquery2', function(){
+        // Local-scope jQuery (so it's quicker to use)
+        var $ = core.$;
+    });
 })(uoe); 
 ```
 
 There are several things of note in this template:
 
  - The code is all wrapped in a self-executing function so that it is separated from the global scope and can't interfere with it.
+ - We locally scope the global root variable (we use `uoe`) to `core` inside the module. This makes it easier to share modules between different implementations of uoe_core.
  - We recommend using `"use strict";` to catch irresponsible code.
- - jQuery is locally-scoped to `$` for easy writing (more or this below).
+ - External modules like jQuery are included inline so that they are only loaded when necessary.
  - You can see the namespacing of the module in action.
 
 ## Working with jQuery
@@ -69,7 +73,7 @@ We simply change this line to:
 This means that if the `uoe` object is defined and has jQuery attached then the plugin should attach itself to that. If the `uoe` object doesn't exist, the plugin will try and attach itself to a global jQuery object. This is important because it ensures that our plugins are backwards-compatible and still work with old applications.
 
 ## The Resource Matrix
-All of the module dependencies are contained in the Resource Matrix at the top of the `uoe_core` file. The Matrix is a set of objects, all attached to unique codes that they are referenced by. In the base setup of `uoe_core` provided, you can see Resource Matrix entries for two modules called `jquery2` and `demo`. Note that the dependency of `demo` specifically refers to `jquery2`.
+All of the module dependencies are contained in the Resource Matrix at the top of the `uoe_core` file. The Matrix is a set of objects, all attached to unique codes that they are referenced by. In the base setup of `uoe_core` provided, you can see Resource Matrix entries for the `jquery` module. Note that the `demo` module doesn't have an entry here since its dependencies and loaded conditionally.
 
 Each entry in the Resource Matrix can have the following properties:
 
@@ -97,6 +101,8 @@ Loads the resource with the specified code, and its dependencies as necessary. Y
 
 ### uoe.require( mixed `resources`, func `callback` )
 Loads the resources as `uoe.load` does, but executes the function `callback` when they have all been successfully loaded.
+
+If you provide an empty string as the first argument, it will treated as "null script" and the callback function will immediately be run. This can be helpful when doing conditional loading.
 
 ### uoe.register( str `code`, obj `resource` )
 Allows you to add a resource to the Resource Matrix, but at runtime. The format of `resource` and its available properties is as specified above.

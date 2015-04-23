@@ -21,10 +21,6 @@
         jquery2: {
             src: 'https://code.jquery.com/jquery-2.1.3.min.js',
             callback: function(){ core.$ = $.noConflict(); window.jQuery = $; }
-        },
-        demo: {
-            depend: ['jquery2'],
-            src: '%uoe_demo.js'
         }
     };
     
@@ -132,7 +128,11 @@
                     loadIn( resource.depend, true );
                 resource.dependedOn = resource.dependedOn || child;
                 loadList.push( resource );
-            } else if( resources[i].substr(0,7) === 'http://' || resources[i].substr(0,8) === 'https://' ) {
+            } else if( resources[i] === '' ) {
+                // If it's an empty string, push the null object
+                loadList.push({src:'', code:''});
+            } else if( resources[i].indexOf('.js') > -1 ) {
+                // If it looks like an external resource, try and load that
                 loadList.push({
                     code: resources[i],
                     src: resources[i],
@@ -188,8 +188,6 @@
     * @returns {boolean} Whether the resource is loaded
     */
     function isLoaded( code ) {
-        if( !code ) return false;
-        
         // If this is a conditional string (e.g. "jquery1|jquery2") check if *any* of those is loaded
         var codes = code.split('|');
         
@@ -226,24 +224,34 @@
     * @returns {object} The core object
     */
     core.require = function( files, callback ) {
-        var requiredCount = 0;
+        var isComplete = false;
         // Force to an array for easy iterating
         if( typeof files === 'string' ) files = [files];
         
         // The collector
         function collector() {
-            requiredCount++;
-            if( requiredCount === files.length ) {
-                callback.apply( core );
+            // If it's already complete, don't try again
+            if( isComplete ) return;
+            
+            // Check every file has been loaded in correctly
+            for( var i in files ) {
+                if( !isLoaded( files[i] ) ) {
+                    return;
+                }
             }
+            
+            // If every file is successfully loaded, fire the callback and quit
+            isComplete = true;
+            callback.apply( core );
         }
         
-        // Load each resource
+        // Attach the collector callback
         if( typeof callback === 'function' ) {
-            for( var i in files ) {
-                core.on( 'load:' + files[i], collector );
-            }
+            core.on( 'load', collector );
         }
+        
+        // Run the collector now in case everything has already loaded
+        collector();
         
         // Go into core.load
         core.load( files, false );
@@ -324,6 +332,19 @@
             return true;
         }
         
+        // When the script has loaded, trigger the callbacks, and add it to the push list
+        function onLoaded() {
+            loaded.push( obj );
+            trigger( 'load:' + obj.code );
+            trigger( 'load' );
+        }
+        
+        // If it's the null script, no need to include an empty script tag on the page
+        if( obj.code === '' ) {
+            onLoaded();
+            return true;
+        }
+        
         // Create the script
         var script = document.createElement('script');
         script.src = parseSrc( obj.src );
@@ -333,6 +354,13 @@
         // Set async to true so we don't block other page load elements
         script.async = true;
         
+        // Add any additional attributes (e.g. you might want to set "charset" or "media")
+        if( typeof obj.attrs === 'object' ) {
+            for( var i in obj.attrs ) {
+                script.setAttribute(i, obj.attrs[i] );
+            }
+        }
+        
         // Register any default callbacks to run when the script is loaded
         if( typeof obj.callback === 'function' ) {
             core.on( 'load:' + obj.code, obj.callback, true );
@@ -341,13 +369,6 @@
         // Load in additional styles if suitable
         if( obj.style ) {
             includeStyle( obj );
-        }
-        
-        // When the script has loaded, trigger the callbacks, and add it to the push list
-        function onLoaded() {
-            loaded.push( obj );
-            trigger( 'load:' + obj.code );
-            trigger( 'load' );
         }
         
         // Considered having a quick-include if nothing was dependent on the file but, depending on script
