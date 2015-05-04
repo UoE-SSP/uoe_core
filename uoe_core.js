@@ -471,7 +471,9 @@
     }
     
     // Load the scripts when the page has finished loading
-    if( document.addEventListener ) {
+    if( document.readyState === 'loaded' || document.readyState === 'complete' ) {
+        loadScripts();
+    } else if( document.addEventListener ) {
         document.addEventListener( 'DOMContentLoaded', loadScripts, false );
     } else if( document.attachEvent ) {
         document.attachEvent( 'onDOMContentLoaded', loadScripts );
