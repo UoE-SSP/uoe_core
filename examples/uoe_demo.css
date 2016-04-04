@@ -1,0 +1,6 @@
+/***
+ This CSS file can be loaded in by uoe_core too, by using the `style` property of an object in `uoe.require`
+***/
+body {
+  background-color: red;
+}

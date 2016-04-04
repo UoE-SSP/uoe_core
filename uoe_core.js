@@ -9,7 +9,7 @@
     var isDOMReady = false; // Is the DOM complete?
     var loadList = []; // Initiate the load queue
     var loaded = []; // Initiate the load list
-    var dirPrefix = 'examples/'; // Change this to the location of your JavaScript files
+    var dirPrefix = '/base/examples/'; // Change this to the location of your JavaScript files
 
     // We will queue up all the scripts in order. This index is used to track how far through the process we are.
     var loadIndex = 0;
@@ -24,13 +24,13 @@
         jquery2: {
             src: 'https://code.jquery.com/jquery-2.1.3.min.js',
             callback: function($) {
-            if (typeof window.jQuery === 'undefined') {
-                window.jQuery = $;
-                window.$ = $;
-            }
+                if (typeof window.jQuery === 'undefined') {
+                    window.jQuery = $;
+                    window.$ = $;
+                }
 
-            core.$ = $;
-        }
+                core.$ = $;
+            }
         }
     };
 
@@ -122,6 +122,7 @@
     */
     function loadIn(resources, child) {
         if (typeof resources !== 'object') resources = [resources];
+
         // Add each script to the load list
         for (var i in resources) {
             var resource = resourceMatrix[ resources[i] ];
