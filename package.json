@@ -1,0 +1,16 @@
+{
+  "name": "uoe_core",
+  "description": "The bootstrapper for SSP JavaScript",
+  "version": "1.0.0",
+  "bugs": "https://github.com/UoE-SSP/uoe_core/issues",
+  "devDependencies": {
+    "jasmine": "^2.4.1",
+    "jshint": "^2.9.1",
+    "karma": "^0.13.22",
+    "karma-jasmine": "^0.3.8",
+    "karma-phantomjs2-launcher": "^0.5.0"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/karma start --single-run"
+  }
+}
