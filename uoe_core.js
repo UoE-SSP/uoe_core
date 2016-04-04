@@ -11,8 +11,11 @@
     var loaded = []; // Initiate the load list
     var dirPrefix = 'examples/'; // Change this to the location of your JavaScript files
 
+    // We will queue up all the scripts in order. This index is used to track how far through the process we are.
+    var loadIndex = 0;
+
     // Don't allow a conflict to happen
-    if( !!window[namespace] ) return;
+    if (!!window[namespace]) return;
 
     // The grand resource matrix. You can use % as a synonym for the directory detailed above
     var resourceMatrix = {
@@ -20,11 +23,18 @@
         // See the README for more information on how to write this
         jquery2: {
             src: 'https://code.jquery.com/jquery-2.1.3.min.js',
-            callback: function(){ core.$ = $.noConflict(true); }
+            callback: function($) {
+            if (typeof window.jQuery === 'undefined') {
+                window.jQuery = $;
+                window.$ = $;
+            }
+
+            core.$ = $;
+        }
         }
     };
 
-   /*****
+    /*****
     * ARBITRARY HELPERS
     *****/
     core.guid = function() {
@@ -51,7 +61,7 @@
     core.on = function(event, callback, priority, args) {
         var params = (typeof args === 'object' && args.params) ? args.params : [];
 
-        // If it has already loaded, continue
+        // Continue if it has already loaded
         if (event.substr(0, 5) === 'load:' && isLoaded(event.substr(5))) {
             core.eventParams = params;
             callback.apply(core);
@@ -142,7 +152,10 @@
                     dependedOn: child
                 });
             } else if (typeof resource === 'undefined') {
-                console.error(resources[i] + ' not found in the resource matrix.');
+                loadList.push({
+                   code: resources[i],
+                   src: '%' + resources[i] + '.js'
+                });
             }
         }
 
@@ -163,8 +176,7 @@
     * @returns {object} The core object
     */
     core.load = function(subject) {
-        loadIn(subject, false);
-        return core;
+        return core.require(subject);
     }
 
    /**
@@ -236,28 +248,37 @@
             // If it's already complete, don't try again
             if (isComplete) return;
 
+            var args = [];
+
             // Check every file has been loaded in correctly
             for (var i in files) {
                 if (!isLoaded(files[i])) {
                     return;
                 }
+
+                for (var t in loadList) {
+                    if (loadList[t].code === files[i] && typeof loadList[t].export !== 'undefined') {
+                        args[i] = loadList[t].export;
+                    }
+                }
             }
 
             // If every file is successfully loaded, fire the callback and quit
             isComplete = true;
-            callback.apply(core);
+
+            if (typeof callback === 'function') {
+                callback.apply(core, args);
+            }
         }
 
         // Attach the collector callback
-        if (typeof callback === 'function') {
-            core.on('load', collector);
-        }
+        core.on('load', collector);
 
         // Run the collector now in case everything has already loaded
         collector();
 
         // Go into core.load
-        core.load(files, false);
+        loadIn(files, false);
 
         return core;
     }
@@ -339,7 +360,15 @@
         // When the script has loaded, trigger the callbacks, and add it to the push list
         function onLoaded() {
             loaded.push(obj);
-            trigger('load:' + obj.code);
+
+            // If it exported something, grab that
+            var module = (typeof window.module.exports === 'function' || typeof window.module.exports === 'object') ? window.module.exports : null;
+            obj.export = module;
+
+            // Reset module exports
+            window.module.exports = {};
+
+            trigger('load:' + obj.code, [module]);
             trigger('load');
         }
 
@@ -462,9 +491,6 @@
     // Every time something is loaded, run tryToLoadAll again to see if there's anything else to push through
     core.on('load', tryToLoadAll);
 
-    // We've queued up all the scripts in order. This index is used to track how far through the process we are.
-    var loadIndex = 0;
-
     // The function to add the scripts to the page
     function loadScripts() {
         // The DOM is now ready
@@ -476,6 +502,16 @@
 
     // Load the scripts
     loadScripts();
+
+    // Bind keypress to click
+    document.addEventListener('keydown', function(e) {
+        if (e.which === 13) e.target.click();
+    }, false);
+
+    // Set global "module" to be attached to
+    if (typeof window.module === 'undefined') {
+        window.module = {exports: {}};
+    }
 
     // Expose core to the global scope
     window[namespace] = core;
