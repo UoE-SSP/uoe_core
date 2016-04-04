@@ -1,4 +1,7 @@
 # uoe_core
+
+[![Build Status](https://travis-ci.org/UoE-SSP/uoe_core.svg?branch=master)](https://travis-ci.org/UoE-SSP/uoe_core)
+
 This file forms the  bootstrapper for our JavaScript. All of our JavaScript files are loaded through uoe_core in the order specified by their dependencies.
 
 **uoe_core is specifically designed for use with our implementation of SITS:Vision, and may not be suited to other applications. Equally, a lot of design decisions may seem unlikely but have been shaped by the environment we work in.**
