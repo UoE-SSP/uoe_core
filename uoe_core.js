@@ -43,6 +43,45 @@
             var v = c === 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
+    };
+
+    /**
+    * Helper function to determine if a script is already loaded
+    *
+    * @param {string} code The code of the resource to test
+    * @returns {boolean} Whether the resource is loaded
+    */
+    function isLoaded(code) {
+        // If this is a conditional string (e.g. "jquery1|jquery2") check if *any* of those is loaded
+        var codes = code.split('|');
+
+        for (var t in codes) {
+            for (var i in loaded) {
+                if (loaded[i].code === codes[t]) {
+                    return true;
+                }
+            }
+        }
+
+        // If nothing was found, return false
+        return false;
+    }
+
+   /**
+    * Helper function to determine if a script is already in the queue
+    *
+    * @param {string} code The code of the resource to test
+    * @returns {boolean} Whether the resource is queued
+    */
+    function isQueued(code) {
+        for (var i in loadList) {
+            if (loadList[i].code === code) {
+                return true;
+            }
+        }
+
+        // If nothing was found, return false
+        return false;
     }
 
    /*****
@@ -81,7 +120,7 @@
         }
 
         return core;
-    }
+    };
 
    /**
     * Trigger an event
@@ -122,7 +161,6 @@
     */
     function loadIn(resources, child) {
         if (typeof resources !== 'object') resources = [resources];
-
         // Add each script to the load list
         for (var i in resources) {
             var resource = resourceMatrix[ resources[i] ];
@@ -144,7 +182,7 @@
                 loadList.push(resource);
             } else if (resources[i] === '') {
                 // If it's an empty string, push the null object
-                loadList.push({src:'', code:''});
+                loadList.push({src: '', code: ''});
             } else if (resources[i].indexOf('.js') > -1) {
                 // If it looks like an external resource, try and load that
                 loadList.push({
@@ -162,7 +200,7 @@
 
         // Once the DOM is ready and this is top-level, start trying to load resources
         if (isDOMReady && !child) {
-            tryToLoadAll();
+            tryToLoadAll(); // eslint-disable-line no-use-before-define
         }
 
         return core;
@@ -178,46 +216,7 @@
     */
     core.load = function(subject) {
         return core.require(subject);
-    }
-
-   /**
-    * Helper function to determine if a script is already in the queue
-    *
-    * @param {string} code The code of the resource to test
-    * @returns {boolean} Whether the resource is queued
-    */
-    function isQueued(code) {
-        for (var i in loadList) {
-            if (loadList[i].code === code) {
-                return true;
-            }
-        }
-
-        // If nothing was found, return false
-        return false;
-    }
-
-   /**
-    * Helper function to determine if a script is already loaded
-    *
-    * @param {string} code The code of the resource to test
-    * @returns {boolean} Whether the resource is loaded
-    */
-    function isLoaded(code) {
-        // If this is a conditional string (e.g. "jquery1|jquery2") check if *any* of those is loaded
-        var codes = code.split('|');
-
-        for (var t in codes) {
-            for (var i in loaded) {
-                if (loaded[i].code === codes[t]) {
-                    return true;
-                }
-            }
-        }
-
-        // If nothing was found, return false
-        return false;
-    }
+    };
 
    /**
     * Register a new module to the resource matrix
@@ -230,7 +229,7 @@
     core.register = function(code, resource) {
         resourceMatrix[code] = resource;
         return core;
-    }
+    };
 
    /**
     * Load a resource or group of resource before performing a callback
@@ -244,7 +243,9 @@
         // Force to an array for easy iterating
         if (typeof files === 'string') files = [files];
 
-        // The collector
+        /**
+         * Collect loaded files together until all complete
+         */
         function collector() {
             // If it's already complete, don't try again
             if (isComplete) return;
@@ -282,7 +283,7 @@
         loadIn(files, false);
 
         return core;
-    }
+    };
 
    /**
     * Pre-inclusion checks on an object
@@ -340,6 +341,23 @@
     }
 
    /**
+    * Insert a single stylesheet
+    *
+    * @param {object} obj The resource to include the stylesheet from
+    * @returns {object} The core object
+    */
+    function includeStyle(obj) {
+        var link = document.createElement('link');
+        link.href = parseSrc(obj.style);
+        // Set a code we can check against later
+        link.setAttribute('data-load-code', obj.code);
+        link.setAttribute('rel', 'stylesheet');
+        document.head.appendChild(link);
+
+        return core;
+    }
+
+   /**
     * Insert a single script, along with any CSS dependencies and callbacks
     *
     * @param {object} obj The resource to include
@@ -348,8 +366,10 @@
     function includeScript(obj) {
         // First, check if there are any conditions to be fulfilled
         obj = interpretScript(obj);
-        if (typeof obj === 'object')
+        if (typeof obj === 'object') {
             obj.queued = true;
+        }
+
         // Update the load queue
         loadList[loadIndex] = obj;
 
@@ -358,7 +378,9 @@
             return true;
         }
 
-        // When the script has loaded, trigger the callbacks, and add it to the push list
+        /**
+         * When the script has loaded, trigger the callbacks, and add it to the push list
+         */
         function onLoaded() {
             loaded.push(obj);
 
@@ -412,23 +434,6 @@
 
         // Add to the <head> element
         document.getElementsByTagName('head')[0].appendChild(script);
-
-        return core;
-    }
-
-   /**
-    * Insert a single stylesheet
-    *
-    * @param {object} obj The resource to include the stylesheet from
-    * @returns {object} The core object
-    */
-    function includeStyle(obj) {
-        var link = document.createElement('link');
-        link.href = parseSrc(obj.style);
-        // Set a code we can check against later
-        link.setAttribute('data-load-code', obj.code);
-        link.setAttribute('rel', 'stylesheet');
-        document.head.appendChild(link);
 
         return core;
     }
@@ -493,13 +498,13 @@
     core.on('load', tryToLoadAll);
 
     // The function to add the scripts to the page
-    function loadScripts() {
+    var loadScripts = function() {
         // The DOM is now ready
         isDOMReady = true;
 
         // Immediately try and load things
         tryToLoadAll();
-    }
+    };
 
     // Load the scripts
     loadScripts();
